@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<Import Project="$(MSBuildThisFileDirectory)/Dependencies.props" />
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<DebugType>None</DebugType>
+		<AssemblyName>$(SolutionName)</AssemblyName>
+		<RootNamespace>$(SolutionName)</RootNamespace>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
+	<Target Name="PostBuild" BeforeTargets="PostBuildEvent">
+		<Delete Files="$(OutputPath)$(AssemblyName).deps.json" />
+	</Target>
+</Project>

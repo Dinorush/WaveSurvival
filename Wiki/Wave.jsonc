@@ -1,0 +1,53 @@
+{
+  "ExampleWave": { // Each wave has a string ID (given by the name). Case/space sensitive
+    "Spawns": [
+      {
+        "Enemies": [  // The random enemies to spawn. 
+                      // Each list specifies:
+                      //  Enemy ID
+                      //  Weight (higher = more likely to be picked)
+                      //  Cost (amount of spawns it consumes)
+          0,          // Shorthand format - specify only ID
+          [0, 1],     // Slightly less shorthand format - specify ID and Weight
+          [0, 1, 1]   // Full format - specifies ID, Weight, Cost
+        ],
+        "Count": 0,   // The number of enemies to spawn. If 0, spawns each ID in the enemies list, regardless of weight/cost
+        "SpawnRate": 20, // How many enemies spawn per second
+        "SubWaveMaxCount": 0, // Wait until only this number of enemies from previous spawns are alive before spawning
+        "SubWaveDelay": 0,    // Wait for this many seconds before spawning. Both MaxCount and Delay must be satisfied to spawn.
+                              // Later spawns are blocked until this spawn's subwave conditions are met.
+        "RandomDirectionChance": 0, // Chance to randomize which spawn point to use.
+        "EventsOnSubWaveStart": []  // Warden objective events to fire when spawn occurs
+      }
+    ],
+    "WaveHeader": "\u003Cu\u003ECurrent Wave\u003C/u\u003E\n\u003Ccolor=orange\u003E[WAVE]\u003C/color\u003E", // Text to show on the top of the screen.
+    "ScreamSize": "Small",   // Scream size to play when the wave starts. 
+                             //   Small
+                             //   Medium
+                             //   Big
+                             
+    "ScreamType": "Striker"  // Scream type
+                             //   Striker
+                             //   Shooter
+                             //   Birther
+                             //   Shadow
+                             //   Tank
+                             //   Flyer
+                             //   Immortal
+                             //   Bullrush
+                             //   Pouncer
+                             //   Striker_Berserk
+                             //   Shooter_Spread
+                             //   None
+  },
+  "ExampleBoss": {
+    "Spawns": [ // Shorthand - If IDs are used directly, follows the count 0 format (each of the IDs spawns once)
+      1,
+      2,
+      3
+    ],
+    "WaveHeader": "\u003Cu\u003EBoss Wave\u003C/u\u003E\n\u003Ccolor=orange\u003E[WAVE]\u003C/color\u003E",
+    "ScreamSize": "Big",
+    "ScreamType": "Tank"
+  }
+}
