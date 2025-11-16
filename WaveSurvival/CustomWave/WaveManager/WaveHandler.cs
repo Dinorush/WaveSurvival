@@ -1,5 +1,6 @@
 ﻿using GameData;
 using Il2CppInterop.Runtime.Attributes;
+using Player;
 using UnityEngine;
 using WaveSurvival.CustomWaveData;
 using WaveSurvival.CustomWaveData.Wave;
@@ -64,19 +65,32 @@ namespace WaveSurvival.CustomWave
         [HideFromIl2Cpp]
         private void FinishWave(int index, ActiveWave wave)
         {
+            var eventData = wave.EventData;
             bool allWavesComplete = _finishedWaves.Count == _activeWaves.Count;
-            if (wave.EventData.EndOnAllWavesEnd && !allWavesComplete) return;
+            if (eventData.EndOnAllWavesEnd && !allWavesComplete) return;
 
             // If the current wave is the one that finished, advance the message but don't modify the timer until all waves are done
             if (_currentWave == index)
             {
-                _nextWaveDelayCache = wave.EventData.TimeToNextOnEnd;
+                _nextWaveDelayCache = eventData.TimeToNextOnEnd;
                 if (!allWavesComplete)
                     WaveNetwork.SetWave(_currentWave + 1, GetNetworkID(_currentWave + 1), _nextWaveTime, WaveState.RemainingWaves);
             }
 
-            foreach (var we in wave.EventData.EventsOnWaveEnd)
+            foreach (var we in eventData.EventsOnWaveEnd)
                 WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(we, eWardenObjectiveEventTrigger.None, true);
+
+            if (eventData.HasAnyGain)
+            {
+                foreach (var player in PlayerManager.PlayerAgentsInLevel)
+                {
+                    if (eventData.HasAnyAmmoGain)
+                        PlayerBackpackManager.GiveAmmoToPlayer(player.Owner, eventData.MainAmmoGainOnEnd, eventData.SpecialAmmoGainOnEnd, eventData.ToolAmmoGainOnEnd);
+                    if (eventData.HealthGainOnEnd > 0f)
+                        player.GiveHealth(player, eventData.HealthGainOnEnd);
+                }
+            }
+
             _activeWaves.Remove(index);
 
             if (allWavesComplete)
