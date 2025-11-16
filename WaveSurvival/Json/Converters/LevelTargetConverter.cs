@@ -7,6 +7,8 @@ namespace WaveSurvival.Json.Converters
 {
     public sealed class LevelTargetConverter : JsonConverter<LevelTarget>
     {
+        public override bool HandleNull => true;
+
         public override LevelTarget? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             LevelTarget target = new();
@@ -56,9 +58,7 @@ namespace WaveSurvival.Json.Converters
 
         public override void Write(Utf8JsonWriter writer, LevelTarget? value, JsonSerializerOptions options)
         {
-            if (value == null) return;
-
-            if (value.LevelLayoutID == 0 && value.Tier == eRundownTier.Surface)
+            if (value == null || (value.LevelLayoutID == 0 && value.Tier == eRundownTier.Surface))
             {
                 writer.WriteNullValue();
                 return;

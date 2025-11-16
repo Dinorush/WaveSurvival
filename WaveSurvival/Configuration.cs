@@ -3,7 +3,7 @@ using BepInEx;
 using GTFO.API.Utilities;
 using UnityEngine;
 
-namespace WaveSurvival.Settings.Vanilla
+namespace WaveSurvival
 {
     internal static class Configuration
     {

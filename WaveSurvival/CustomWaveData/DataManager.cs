@@ -14,7 +14,6 @@ namespace WaveSurvival.CustomWaveData
 
         private const string WaveDir = "Waves";
         private const string ObjectiveDir = "Objectives";
-        private readonly LiveEditListener _listener;
 
         private readonly Dictionary<string, List<WaveObjectiveData>> _objectiveFiles = new();
         private readonly Dictionary<string, Dictionary<string, WaveData>> _waveFiles = new();
@@ -62,6 +61,13 @@ namespace WaveSurvival.CustomWaveData
             OnObjectiveReload();
         }
 
+        private void ObjectiveFileRemoved(LiveEditEventArgs e)
+        {
+            DinoLogger.Warning($"Objective file {e.FileName} removed");
+            _objectiveFiles.Remove(e.FullPath);
+            OnObjectiveReload();
+        }
+
         private void ReadObjectiveContent(string filepath, string content)
         {
             if (!JSON.TryDeserializeSafe<List<WaveObjectiveData>>(content, out var newList)) return;
@@ -94,6 +100,13 @@ namespace WaveSurvival.CustomWaveData
         {
             DinoLogger.Warning($"Wave file {e.FileName} changed");
             LiveEdit.TryReadFileContent(e.FullPath, (content) => ReadWaveContent(e.FullPath, content));
+            OnWaveReload();
+        }
+
+        private void WaveFileRemoved(LiveEditEventArgs e)
+        {
+            DinoLogger.Warning($"Wave file {e.FileName} removed");
+            _waveFiles.Remove(e.FullPath);
             OnWaveReload();
         }
 
@@ -145,16 +158,18 @@ namespace WaveSurvival.CustomWaveData
             foreach (string filepath in Directory.EnumerateFiles(OBJECTIVE_PATH, "*.json", SearchOption.AllDirectories))
                 ReadObjectiveContent(filepath, File.ReadAllText(filepath));
             OnObjectiveReload();
-            _listener = LiveEdit.CreateListener(OBJECTIVE_PATH, "*.json", true);
-            _listener.FileChanged += ObjectiveFileChanged;
-            _listener.FileCreated += ObjectiveFileCreated;
+            var listener = LiveEdit.CreateListener(OBJECTIVE_PATH, "*.json", true);
+            listener.FileChanged += ObjectiveFileChanged;
+            listener.FileCreated += ObjectiveFileCreated;
+            listener.FileDeleted += ObjectiveFileRemoved;
 
             foreach (string filepath in Directory.EnumerateFiles(WAVE_PATH, "*.json", SearchOption.AllDirectories))
                 ReadWaveContent(filepath, File.ReadAllText(filepath));
             OnWaveReload();
-            _listener = LiveEdit.CreateListener(WAVE_PATH, "*.json", true);
-            _listener.FileChanged += WaveFileChanged;
-            _listener.FileCreated += WaveFileCreated;
+            listener = LiveEdit.CreateListener(WAVE_PATH, "*.json", true);
+            listener.FileChanged += WaveFileChanged;
+            listener.FileCreated += WaveFileCreated;
+            listener.FileDeleted += WaveFileRemoved;
         }
 
         [InvokeOnLoad]

@@ -1,5 +1,4 @@
-﻿using LevelGeneration;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace WaveSurvival.CustomWave
 {
@@ -14,18 +13,45 @@ namespace WaveSurvival.CustomWave
             _pathIndex = -1;
         }
 
-        public bool TryAdvancePath(LG_Zone zone, [MaybeNullWhen(false)] out EnemySpawner spawner, out EnemySpawner? oldSpawner)
+        public bool TryUpdatePath(bool opened, out EnemySpawner? spawner, out EnemySpawner? oldSpawner)
         {
-            // At the end of the path
-            if (_pathIndex >= _path.Count - 1)
+            return opened ? TryAdvancePath(out spawner, out oldSpawner) : TryRevertPath(out spawner, out oldSpawner);
+        }
+
+        public bool TryRevertPath(out EnemySpawner? spawner, [MaybeNullWhen(false)] out EnemySpawner oldSpawner)
+        {
+            if (_pathIndex == -1 || _path[_pathIndex].ZoneNode.IsReachable)
             {
-                oldSpawner = null;
                 spawner = null;
+                oldSpawner = null;
                 return false;
             }
 
-            // The newly opened zone doesn't match the next one
-            if (_path[_pathIndex + 1].Node.m_zone.ID != zone.ID)
+            int newIndex = _pathIndex;
+            while (newIndex - 1 >= 0 && !_path[newIndex - 1].ZoneNode.IsReachable)
+                --newIndex;
+
+            oldSpawner = _path[_pathIndex];
+            oldSpawner.Valid = false;
+
+            _pathIndex = newIndex;
+            if (_pathIndex >= 0)
+            {
+                spawner = _path[newIndex];
+                spawner.Valid = true;
+            }
+            else
+                spawner = null;
+            return true;
+        }
+
+        public bool TryAdvancePath([MaybeNullWhen(false)] out EnemySpawner spawner, out EnemySpawner? oldSpawner)
+        {
+            int newIndex = _pathIndex;
+            while (newIndex + 1 < _path.Count && _path[newIndex + 1].ZoneNode.IsReachable)
+                ++newIndex;
+
+            if (newIndex == _pathIndex)
             {
                 oldSpawner = null;
                 spawner = null;
@@ -40,9 +66,12 @@ namespace WaveSurvival.CustomWave
             else
                 oldSpawner = null;
 
-            spawner = _path[++_pathIndex];
+            _pathIndex = newIndex;
+            spawner = _path[newIndex];
             spawner.Valid = true;
             return true;
         }
+
+        static string GetSpawnerInfo(EnemySpawner spawner) => $"Zone {(int)spawner.ZoneNode.Zone.LocalIndex} Area {spawner.Node.m_area.m_navInfo.Suffix}";
     }
 }

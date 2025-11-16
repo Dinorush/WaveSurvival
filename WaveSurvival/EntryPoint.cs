@@ -5,14 +5,12 @@ using HarmonyLib;
 using WaveSurvival.Attributes;
 using System.Reflection;
 using WaveSurvival.Dependencies;
-using WaveSurvival.Settings;
 
 namespace WaveSurvival
 {
     [BepInPlugin(GUID, MODNAME, VERSION)]
     [BepInDependency(MTFOWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(PartialData.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
-    [BepInDependency(ArchiveWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class EntryPoint : BasePlugin
     {
         public const string
@@ -37,7 +35,7 @@ namespace WaveSurvival
             new Harmony(MODNAME).PatchAll();
 
             AssetAPI.OnStartupAssetsLoaded += InvokeCallbacks<InvokeOnAssetsLoadedAttribute>;
-            ClientSettings.Init();
+            Configuration.Init();
             InvokeCallbacks<InvokeOnLoadAttribute>();
             DinoLogger.Log($"Loaded {MODNAME}");
         }
@@ -53,8 +51,8 @@ namespace WaveSurvival
 
         private void CacheFrequentCallbacks()
         {
-            Type[] typesFromAssembly = AccessTools.GetTypesFromAssembly(GetType().Assembly);
-            var methods = typesFromAssembly.SelectMany(AccessTools.GetDeclaredMethods).Where(method => method.IsStatic);
+            var allTypes = AccessTools.GetTypesFromAssembly(GetType().Assembly);
+            var methods = allTypes.SelectMany(AccessTools.GetDeclaredMethods).Where(method => method.IsStatic);
             var cleanups = from method in methods
                            let attr = method.GetCustomAttribute<InvokeOnCleanupAttribute>()
                            where attr != null
@@ -78,10 +76,9 @@ namespace WaveSurvival
 
         private void InvokeCallbacks<T>() where T : Attribute
         {
-            Type[] typesFromAssembly = AccessTools.GetTypesFromAssembly(GetType().Assembly);
-            IEnumerable<MethodInfo> enumerable = from method in typesFromAssembly.SelectMany(AccessTools.GetDeclaredMethods)
-                                                 where method.GetCustomAttribute<T>() != null
-                                                 where method.IsStatic
+            var allTypes = AccessTools.GetTypesFromAssembly(GetType().Assembly);
+            IEnumerable<MethodInfo> enumerable = from method in allTypes.SelectMany(AccessTools.GetDeclaredMethods)
+                                                 where method.IsStatic && method.GetCustomAttribute<T>() != null
                                                  select method;
             foreach (MethodInfo item in enumerable)
                 item.Invoke(null, null);

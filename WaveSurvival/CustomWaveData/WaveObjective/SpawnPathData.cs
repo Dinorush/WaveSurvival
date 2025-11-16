@@ -1,6 +1,7 @@
 ﻿using GameData;
 using WaveSurvival.Json.Converters;
 using System.Text.Json.Serialization;
+using LevelGeneration;
 
 namespace WaveSurvival.CustomWaveData.WaveObjective
 {
@@ -21,5 +22,6 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
 
         public eLocalZoneIndex ZoneIndex { get; set; } = eLocalZoneIndex.Zone_0;
         public int AreaIndex { get; set; } = -1;
+        public LG_LayerType Layer { get; set; } = LG_LayerType.MainLayer;
     }
 }

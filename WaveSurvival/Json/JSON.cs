@@ -1,9 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using WaveSurvival.CustomWaveData.Wave;
 using WaveSurvival.CustomWaveData.WaveObjective;
-using WaveSurvival.Json.Converters;
+using WaveSurvival.Json.Converters.Utils;
 
 namespace WaveSurvival.Json
 {

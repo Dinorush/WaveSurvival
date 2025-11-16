@@ -4,13 +4,12 @@ using UnityEngine;
 using WaveSurvival.CustomWaveData;
 using WaveSurvival.CustomWaveData.Wave;
 using WaveSurvival.CustomWaveData.WaveObjective;
-using WaveSurvival.Settings;
 
 namespace WaveSurvival.CustomWave
 {
     public sealed partial class WaveManager
     {
-        class WaveStep
+        readonly struct WaveStep
         {
             public readonly WaveData Wave;
             public readonly WaveEventData EventData;
@@ -32,7 +31,7 @@ namespace WaveSurvival.CustomWave
 
         private void UpdateWaves()
         {
-            if ((_nextWaveTime > 0 && Clock.Time >= _nextWaveTime) || (_activeWaves.Count == 0 && Input.GetKeyDown(ClientSettings.SkipWaveBind)))
+            if ((_nextWaveTime > 0 && Clock.Time >= _nextWaveTime) || (_activeWaves.Count == 0 && Input.GetKeyDown(Configuration.SkipWaveBind)))
                 StartNextWave();
 
             foreach ((var index, var wave) in _activeWaves)
@@ -117,6 +116,10 @@ namespace WaveSurvival.CustomWave
                     _waves.Add(new(wave, group.EventData[count++]));
                 }
             }
+
+            _nextWaveTime = Clock.Time + ActiveObjective.StartDelay;
+            _currentWave = ActiveObjective.StartWave - 2; // Shift 1-indexed from user to 0-indexed, then minus 1 since StartNextWave advances it
+            WaveNetwork.SetWave(_currentWave + 1, GetNetworkID(_currentWave + 1), _nextWaveTime, WaveState.Transition);
         }
 
         private void CleanupWaves()
@@ -126,6 +129,20 @@ namespace WaveSurvival.CustomWave
             _nextWaveTime = 0f;
             _nextWaveDelayCache = 0f;
             _currentWave = -1;
+        }
+
+        private void CheckpointStoreWaves()
+        {
+            _checkpointData.waves = new(_waves);
+            _checkpointData.currentWave = _currentWave;
+        }
+
+        private void CheckpointReloadWaves()
+        {
+            _waves.AddRange(_checkpointData.waves);
+            _currentWave = _checkpointData.currentWave - 1;
+            _nextWaveTime = _currentWave >= 0 ? _waves[_currentWave].EventData.TimeToNextOnEnd : _checkpointData.objective.StartDelay;
+            WaveNetwork.SetWave(_currentWave + 1, GetNetworkID(_currentWave + 1), _nextWaveTime, WaveState.Transition);
         }
     }
 }

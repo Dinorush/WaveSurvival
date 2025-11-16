@@ -4,7 +4,7 @@ namespace WaveSurvival
 {
     internal static class DinoLogger
     {
-        private static ManualLogSource logger = Logger.CreateLogSource(EntryPoint.MODNAME);
+        private static ManualLogSource _logger = Logger.CreateLogSource(EntryPoint.MODNAME);
 
         public static void Log(string format, params object[] args)
         {
@@ -13,9 +13,9 @@ namespace WaveSurvival
 
         public static void Log(string str)
         {
-            if (logger == null) return;
+            if (_logger == null) return;
 
-            logger.Log(LogLevel.Message, str);
+            _logger.Log(LogLevel.Message, str);
         }
 
         public static void Warning(string format, params object[] args)
@@ -25,9 +25,9 @@ namespace WaveSurvival
 
         public static void Warning(string str)
         {
-            if (logger == null) return;
+            if (_logger == null) return;
 
-            logger.Log(LogLevel.Warning, str);
+            _logger.Log(LogLevel.Warning, str);
         }
 
         public static void Error(string format, params object[] args)
@@ -37,9 +37,9 @@ namespace WaveSurvival
 
         public static void Error(string str)
         {
-            if (logger == null) return;
+            if (_logger == null) return;
 
-            logger.Log(LogLevel.Error, str);
+            _logger.Log(LogLevel.Error, str);
         }
 
         public static void Debug(string format, params object[] args)
@@ -49,9 +49,9 @@ namespace WaveSurvival
 
         public static void Debug(string str)
         {
-            if (logger == null) return;
+            if (_logger == null) return;
 
-            logger.Log(LogLevel.Debug, str);
+            _logger.Log(LogLevel.Debug, str);
         }
     }
 

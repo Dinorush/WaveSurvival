@@ -1,4 +1,5 @@
 ﻿using GameData;
+using LevelGeneration;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WaveSurvival.CustomWaveData.WaveObjective;
@@ -21,13 +22,23 @@ namespace WaveSurvival.Json.Converters
 
             reader.Read();
             if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected local index when reading a SpawnPath object");
+
             target.ZoneIndex = (eLocalZoneIndex)reader.GetInt32();
-
             reader.Read();
+            if (reader.TokenType == JsonTokenType.EndArray)
+                return target;
+
             if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected area index when reading a SpawnPath object");
-            target.AreaIndex = reader.GetInt32();
 
+            target.AreaIndex = reader.GetInt32();
             reader.Read();
+            if (reader.TokenType == JsonTokenType.EndArray)
+                return target;
+
+            if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected layer when reading a SpawnPath object");
+            target.Layer = (LG_LayerType) reader.GetInt32();
+            reader.Read();
+
             if (reader.TokenType != JsonTokenType.EndArray) throw new JsonException("Expected EndArray when reading SpawnPath object");
             return target;
         }

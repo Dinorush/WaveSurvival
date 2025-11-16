@@ -9,6 +9,7 @@ namespace WaveSurvival.CustomWave
         private static float s_lastSpawnTime = 0f;
 
         public readonly AIG_CourseNode Node;
+        public readonly ZoneNode ZoneNode;
         public readonly int ID;
         private readonly Placement[] _spawnPositions;
         private readonly Queue<(uint id, float delay, ActiveWave wave)> _queuedSpawns = new();
@@ -19,6 +20,7 @@ namespace WaveSurvival.CustomWave
         public EnemySpawner(AIG_CourseNode node)
         {
             Node = node;
+            ZoneNode = ZoneTree.GetZoneNode(node.m_zone);
             ID = node.NodeID;
             var cluster = node.m_nodeCluster;
             _spawnPositions = new Placement[cluster.m_scoredPlacements.Count];

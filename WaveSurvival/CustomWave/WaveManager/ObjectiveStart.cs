@@ -8,14 +8,16 @@ namespace WaveSurvival.CustomWave
 {
     public sealed partial class WaveManager
     {
+        private readonly Dictionary<eDimensionIndex, WaveObjectiveData> _dimensionStartData = new();
         private readonly Dictionary<eWardenObjectiveEventType, WaveObjectiveData> _eventStartData = new();
         private readonly Dictionary<eWardenObjectiveEventType, WaveObjectiveData> _eventStopData = new();
 
-        private void SetupWardenEventObjectives(bool onBuild = false)
+        private void LoadLevelObjectives()
         {
             var expData = RundownManager.GetActiveExpeditionData();
             var layoutID = RundownManager.ActiveExpedition.LevelLayoutData;
 
+            _dimensionStartData.Clear();
             _eventStartData.Clear();
             _eventStopData.Clear();
             foreach (var data in DataManager.ObjectiveDatas)
@@ -27,8 +29,8 @@ namespace WaveSurvival.CustomWave
                     if (!_eventStartData.TryAdd(data.StartEvent, data))
                         DinoLogger.Error($"Unable to register data with StartEvent {data.StartEvent} (already in use)");
                 }
-                else if (onBuild)
-                    ActiveObjective = data;
+                else if (!_dimensionStartData.TryAdd(data.DimensionIndex, data))
+                    DinoLogger.Error($"Unable to register data with no start event and DimensionIndex {data.DimensionIndex} (already in use)");
 
                 if (data.StopEvent != eWardenObjectiveEventType.None)
                 {
@@ -41,7 +43,31 @@ namespace WaveSurvival.CustomWave
         [InvokeOnBuildStart]
         private static void OnBuildStart()
         {
-            Current.SetupWardenEventObjectives(onBuild: true);
+            Current.LoadLevelObjectives();
+            if (Current._dimensionStartData.Remove(eDimensionIndex.Reality, out var data))
+                ActiveObjective = data;
+        }
+
+        private void CheckpointStoreObjectives()
+        {
+            _checkpointData.dimensionStartData = new(_dimensionStartData);
+        }
+
+        private void CheckpointReloadObjectives()
+        {
+            _dimensionStartData.Clear();
+            foreach (var kv in _checkpointData.dimensionStartData)
+                _dimensionStartData.Add(kv.Key, kv.Value);
+        }
+
+        internal static void Internal_OnWarp(eDimensionIndex dimensionIndex)
+        {
+            if (!IsMaster || IsActive) return;
+
+            if (!Current._dimensionStartData.Remove(dimensionIndex, out var data)) return;
+
+            ActiveObjective = data;
+            Current.StartObjective();
         }
 
         internal static void Internal_OnWardenEvent(eWardenObjectiveEventType type)

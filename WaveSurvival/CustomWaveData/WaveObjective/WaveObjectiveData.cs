@@ -19,6 +19,7 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
         public int NetworkID { get; set; } = 0;
 
         public LevelTarget Level { get; set; } = new();
+        public eDimensionIndex DimensionIndex { get; set; } = eDimensionIndex.Reality;
         public int StartWave { get; set; } = 1;
         public float StartDelay { get; set; } = 60f;
         public eWardenObjectiveEventType StartEvent { get; set; } = eWardenObjectiveEventType.None;

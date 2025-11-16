@@ -39,6 +39,8 @@ namespace WaveSurvival.CustomWave
             return IsActive && IsMaster;
         }
 
+        private CheckpointData _checkpointData;
+
         private void Update()
         {
             if (!IsMaster || !IsActive)
@@ -64,14 +66,10 @@ namespace WaveSurvival.CustomWave
             if (ActiveObjective == null || IsActive || !IsMaster) return;
 
             WaveNetwork.SendObjective(ActiveObjective);
+            IsActive = true;
 
             SetupSpawners();
             SetupWaves();
-
-            IsActive = true;
-            _nextWaveTime = Clock.Time + ActiveObjective.StartDelay;
-            _currentWave = ActiveObjective.StartWave - 2; // Shift 1-indexed from user to 0-indexed, then minus 1 since StartNextWave advances it
-            WaveNetwork.SetWave(_currentWave + 1, GetNetworkID(_currentWave + 1), _nextWaveTime, WaveState.Transition);
         }
 
         private void FinishObjective()
@@ -99,6 +97,7 @@ namespace WaveSurvival.CustomWave
             if (DataManager.TryGetObjective(id, out var objective))
             {
                 ActiveObjective = objective;
+                IsActive = true;
                 WaveText.Current.UpdateWaveHeader();
             }
         }
@@ -112,13 +111,49 @@ namespace WaveSurvival.CustomWave
                 var level = objective.Level;
                 foreach (var data in dataList)
                 {
-                    // Will fail if the start event changes, but there's no other way to easily identify the object through changes
-                    if (data.Level.IsMatch(level) && data.StartEvent == objective.StartEvent)
+                    // Will fail if the start event/dimension changes, but there's no unique ID for objectives
+                    if (data.Level.IsMatch(level) && data.StartEvent == objective.StartEvent && data.DimensionIndex == objective.DimensionIndex)
                         ActiveObjective = data;
                 }
             }
 
-            Current.SetupWardenEventObjectives();
+            Current.LoadLevelObjectives();
+        }
+
+        internal static void Internal_OnCheckpointReached() => Current.OnCheckpointReached();
+        private void OnCheckpointReached()
+        {
+            _checkpointData.active = IsActive;
+
+            if (!TryGetActiveObjective(out var objective)) return;
+
+            _checkpointData.objective = objective;
+            CheckpointStoreObjectives();
+            CheckpointStoreWaves();
+        }
+
+        internal static void Internal_OnCheckpointReload() => Current.OnCheckpointReload();
+        private void OnCheckpointReload()
+        {
+            Current.Cleanup();
+            if (!IsMaster || !_checkpointData.active) return;
+
+            ActiveObjective = _checkpointData.objective;
+            WaveNetwork.SendObjective(ActiveObjective);
+            IsActive = true;
+            SetupSpawners();
+
+            CheckpointReloadObjectives();
+            CheckpointReloadWaves();
+        }
+
+        struct CheckpointData
+        {
+            public bool active;
+            public WaveObjectiveData objective;
+            public List<KeyValuePair<eDimensionIndex, WaveObjectiveData>> dimensionStartData;
+            public List<WaveStep> waves;
+            public int currentWave;
         }
     }
 }
