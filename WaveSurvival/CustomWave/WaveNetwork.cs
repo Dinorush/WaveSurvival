@@ -41,6 +41,8 @@ namespace WaveSurvival.CustomWave
 
         internal static void DoWaveScream(ScreamSize screamSize, ScreamType screamType, Vector3 position)
         {
+            if (screamType == ScreamType.None) return;
+
             _waveScreamSync.Send(new()
             {
                 screamSize = screamSize,

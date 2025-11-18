@@ -74,6 +74,7 @@ namespace WaveSurvival.CustomWave
 
                 foreach (var we in CurrentSpawn.EventsOnSubWaveStart)
                     WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(we, GameData.eWardenObjectiveEventTrigger.None, true);
+                WaveNetwork.DoWaveScream(CurrentSpawn.SubWaveScreamSize, CurrentSpawn.SubWaveScreamType, _spawner.Node.Position);
                 IncrementSpawn();
             }
 
