@@ -118,17 +118,9 @@ namespace WaveSurvival.CustomWave
         {
             foreach (var group in ActiveObjective!.WaveSequence)
             {
-                for (int count = 0; count < group.EventData.Count;)
-                {
-                    var id = group.Waves.GetRandom().ID;
-                    // If this infinite loops, not my problem
-                    if (!DataManager.TryGetWave(id, out var wave))
-                    {
-                        DinoLogger.Error($"Unable to find wave ID {id}");
-                        continue;
-                    }
-                    _waves.Add(new(wave, group.EventData[count++]));
-                }
+                group.RefillWaves();
+                for (int count = 0; count < group.Events.Count;)
+                    _waves.Add(new(group.GetWaveData(), group.Events[count++]));
             }
 
             _nextWaveTime = Clock.Time + ActiveObjective.StartDelay;

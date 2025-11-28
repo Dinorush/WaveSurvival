@@ -27,5 +27,11 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
         public LocaleText CompleteHeader { get; set; } = new("<u>All Waves Complete</u>");
         public List<List<SpawnPathData>> SpawnPaths { get; set; } = EmptyList<List<SpawnPathData>>.Instance;
         public List<WaveGroupData> WaveSequence { get; set; } = EmptyList<WaveGroupData>.Instance;
+
+        public void ResolveReferences()
+        {
+            foreach (var group in WaveSequence)
+                group.ResolveReferences();
+        }
     }
 }

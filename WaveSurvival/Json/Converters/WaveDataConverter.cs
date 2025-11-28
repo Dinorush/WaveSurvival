@@ -27,10 +27,10 @@ namespace WaveSurvival.Json.Converters
                     case "spawns":
                         if (reader.TokenType == JsonTokenType.Number)
                         {
-                            if (JSON.TryDeserialize<SpawnData>(ref reader, out var shorthand))
+                            if (JSON.TryDeserialize<JsonReference<SpawnData>>(ref reader, out var shorthand))
                                 target.Spawns = new() { shorthand };
                         }
-                        else if (JSON.TryDeserialize<List<SpawnData>>(ref reader, out var spawns))
+                        else if (JSON.TryDeserialize<List<JsonReference<SpawnData>>>(ref reader, out var spawns))
                             target.Spawns = spawns;
                         break;
                     case "waveheader":

@@ -16,6 +16,8 @@ namespace WaveSurvival.CustomWave
 
         private readonly IEnumerator _update;
         private float _lastSubWaveTime;
+        private float _nextIntervalTime;
+        private int _intervalCount;
         private EnemySpawner _spawner;
 
         public ActiveWave(WaveData settings, WaveEventData eventData)
@@ -51,34 +53,35 @@ namespace WaveSurvival.CustomWave
         {
             _lastSubWaveTime = Clock.Time;
 
-            while (!TryDoSpawns())
+            IEnumerator spawns = DoSpawns();
+            while (spawns.MoveNext())
                 yield return null;
 
             while (EnemyCount != 0 || QueuedCount != 0)
                 yield return null;
         }
 
-        private bool TryDoSpawns()
+        private IEnumerator DoSpawns()
         {
-            while (CanDoSpawn())
+            while (!IsDone())
             {
+                while (!CanDoSpawn())
+                    yield return null;
+
                 _lastSubWaveTime = Clock.Time;
 
                 if (WaveManager.Random.NextSingle() < CurrentSpawn.RandomDirectionChance)
                     WaveManager.Current.SetRandomSpawner(ref _spawner);
 
-                if (CurrentSpawn.Count == 0)
-                   DoUnweightedSpawns();
-                else
-                   DoWeightedSpawns();
+                IEnumerator waveSpawns = CurrentSpawn.Count == 0 ? DoUnweightedSpawns() : DoWeightedSpawns();
+                while (waveSpawns.MoveNext())
+                    yield return null;
 
                 foreach (var we in CurrentSpawn.EventsOnSubWaveStart)
                     WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(we, GameData.eWardenObjectiveEventTrigger.None, true);
                 WaveNetwork.DoWaveScream(CurrentSpawn.SubWaveScreamSize, CurrentSpawn.SubWaveScreamType, _spawner.Node.Position);
                 IncrementSpawn();
             }
-
-            return IsDone();
         }
 
         private bool CanDoSpawn()
@@ -95,16 +98,17 @@ namespace WaveSurvival.CustomWave
 
         private bool IsDone() => SpawnIndex >= Settings.Spawns.Count;
 
-        private void DoUnweightedSpawns()
+        private IEnumerator DoUnweightedSpawns()
         {
-            foreach (var enemy in CurrentSpawn.Enemies)
+            List<WeightedEnemyData> enemies = CurrentSpawn.Enemies;
+            foreach (var enemy in enemies)
             {
-                _spawner.AddSpawn(enemy.ID, CurrentSpawn.SpawnRate, this);
-                QueuedCount++;
+                while (!TryAddSpawn(enemy.ID, 1))
+                    yield return null;
             }
         }
 
-        private void DoWeightedSpawns()
+        private IEnumerator DoWeightedSpawns()
         {
             List<WeightedEnemyData> enemies = CurrentSpawn.Enemies;
             float totalSpawnWeight = enemies.Sum(data => data.Weight);
@@ -131,8 +135,8 @@ namespace WaveSurvival.CustomWave
                     runningWeight += enemy.Weight;
                     if (random < runningWeight && remainingCost >= enemy.Cost)
                     {
-                        _spawner.AddSpawn(enemy.ID, CurrentSpawn.SpawnRate, this);
-                        QueuedCount++;
+                        while (!TryAddSpawn(enemy.ID, enemy.Cost))
+                            yield return null;
                         remainingCost -= enemy.Cost;
                         break;
                     }
@@ -143,6 +147,28 @@ namespace WaveSurvival.CustomWave
         private void IncrementSpawn()
         {
             SpawnIndex++;
+            _intervalCount = 0;
+            _nextIntervalTime = 0;
+        }
+
+        private bool TryAddSpawn(uint id, int cost)
+        {
+            var time = Clock.Time;
+            if (time < _nextIntervalTime)
+                return false;
+
+            _spawner.AddSpawn(id, CurrentSpawn.SpawnRate, this);
+            QueuedCount++;
+            _intervalCount += cost;
+
+            if (_intervalCount >= CurrentSpawn.SpawnInterval)
+            {
+                _nextIntervalTime = time + CurrentSpawn.SpawnDelayOnInterval;
+                _intervalCount -= CurrentSpawn.SpawnInterval;
+                if (WaveManager.Random.NextSingle() < CurrentSpawn.RandomDirectionChanceOnInterval)
+                    WaveManager.Current.SetRandomSpawner(ref _spawner);
+            }
+            return true;
         }
     }
 }

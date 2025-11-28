@@ -13,7 +13,8 @@ namespace WaveSurvival.Json.Converters
 
             if (reader.TokenType == JsonTokenType.Number)
             {
-                target.Enemies = new() { new WeightedEnemyData() { ID = reader.GetUInt32() } };
+                WeightedEnemyData enemyData = new() { ID = reader.GetUInt32() };
+                target.Enemies = new(new List<WeightedEnemyData>() { enemyData });
                 return target;
             }
 
@@ -31,7 +32,7 @@ namespace WaveSurvival.Json.Converters
                 switch (name)
                 {
                     case "enemies":
-                        if (JSON.TryDeserialize<List<WeightedEnemyData>>(ref reader, out var enemies))
+                        if (JSON.TryDeserialize<JsonReference<List<WeightedEnemyData>>>(ref reader, out var enemies))
                             target.Enemies = enemies;
                         break;
                     case "count":
@@ -39,6 +40,15 @@ namespace WaveSurvival.Json.Converters
                         break;
                     case "spawnrate":
                         target.SpawnRate = reader.GetSingle();
+                        break;
+                    case "spawninterval":
+                        target.SpawnInterval = reader.GetInt32();
+                        break;
+                    case "spawndelayoninterval":
+                        target.SpawnDelayOnInterval = reader.GetSingle();
+                        break;
+                    case "randomdirectionchanceoninterval":
+                        target.RandomDirectionChanceOnInterval = reader.GetSingle();
                         break;
                     case "subwavemaxcount":
                         target.SubWaveMaxCount = reader.GetInt32();
@@ -59,13 +69,6 @@ namespace WaveSurvival.Json.Converters
             throw new JsonException("Expected EndObject when reading SpawnData object");
         }
 
-        private static bool IsNextToken(Utf8JsonReader reader, JsonTokenType token)
-        {
-            if (!reader.Read()) throw new JsonException("Expected EndArray token when parsing SpawnData");
-
-            return reader.TokenType == token;
-        }
-
         public override void Write(Utf8JsonWriter writer, SpawnData? value, JsonSerializerOptions options)
         {
             if (value == null)
@@ -78,6 +81,9 @@ namespace WaveSurvival.Json.Converters
             JSON.Serialize(writer, nameof(value.Enemies), value.Enemies);
             writer.WriteNumber(nameof(value.Count), value.Count);
             writer.WriteNumber(nameof(value.SpawnRate), value.SpawnRate);
+            writer.WriteNumber(nameof(value.SpawnInterval), value.SpawnInterval);
+            writer.WriteNumber(nameof(value.SpawnDelayOnInterval), value.SpawnDelayOnInterval);
+            writer.WriteNumber(nameof(value.RandomDirectionChanceOnInterval), value.RandomDirectionChanceOnInterval);
             writer.WriteNumber(nameof(value.SubWaveMaxCount), value.SubWaveMaxCount);
             writer.WriteNumber(nameof(value.SubWaveDelay), value.SubWaveDelay);
             writer.WriteNumber(nameof(value.RandomDirectionChance), value.RandomDirectionChance);

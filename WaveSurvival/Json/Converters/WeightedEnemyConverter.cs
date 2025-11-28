@@ -8,40 +8,28 @@ namespace WaveSurvival.Json.Converters
     {
         public override WeightedEnemyData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            WeightedEnemyData data = new();
+            using var doc = JsonDocument.ParseValue(ref reader);
+            var element = doc.RootElement;
 
-            if (reader.TokenType == JsonTokenType.Number)
+            WeightedEnemyData d = new();
+
+            if (element.ValueKind == JsonValueKind.Number)
             {
-                data.ID = reader.GetUInt32();
-                return data;
+                d.ID = element.GetUInt32();
+                return d;
             }
 
-            if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected enemy data to be either a number or list");
+            if (element.ValueKind != JsonValueKind.Array)
+                throw new JsonException("Expected enemy data to be either a number or list");
 
-            reader.Read();
-            if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected ID as first element in enemy data");
+            var arr = element.EnumerateArray();
 
-            data.ID = reader.GetUInt32();
-            reader.Read();
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return data;
+            if (arr.MoveNext()) d.ID = arr.Current.GetUInt32();
+            if (arr.MoveNext()) d.Weight = arr.Current.GetSingle();
+            if (arr.MoveNext()) d.Cost = arr.Current.GetInt32();
+            if (arr.MoveNext()) throw new JsonException("Expected weighted enemy tuple to be at most 3 elements long");
 
-            if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected Weight as second element in enemy data");
-
-            data.Weight = reader.GetSingle();
-            reader.Read();
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return data;
-
-            if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected Cost as third element in enemy data");
-
-            data.Cost = reader.GetInt32();
-            reader.Read();
-
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return data;
-
-            throw new JsonException("Expected EndArray after parsing 3 values for enemy data");
+            return d;
         }
 
         public override void Write(Utf8JsonWriter writer, WeightedEnemyData? value, JsonSerializerOptions options)

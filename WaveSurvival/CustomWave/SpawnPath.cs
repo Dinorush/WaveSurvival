@@ -71,7 +71,5 @@ namespace WaveSurvival.CustomWave
             spawner.Valid = true;
             return true;
         }
-
-        static string GetSpawnerInfo(EnemySpawner spawner) => $"Zone {(int)spawner.ZoneNode.Zone.LocalIndex} Area {spawner.Node.m_area.m_navInfo.Suffix}";
     }
 }

@@ -1,10 +1,18 @@
 ﻿using GameData;
+using System.Text.Json.Serialization;
 using WaveSurvival.Utils;
 
 namespace WaveSurvival.CustomWaveData.WaveObjective
 {
     public class WaveEventData
     {
+        public static readonly Dictionary<string, WaveEventData> Template = new()
+        {
+            {
+                "Example", new()
+            }
+        };
+
         public List<WardenObjectiveEventData> EventsOnWaveStart { get; set; } = EmptyList<WardenObjectiveEventData>.Instance;
         public List<WardenObjectiveEventData> EventsOnWaveEnd { get; set; } = EmptyList<WardenObjectiveEventData>.Instance;
         public float TimeToNextOnStart { get; set; } = 0f;
@@ -15,7 +23,9 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
         public float SpecialAmmoGainOnEnd { get; set; } = 0f;
         public float ToolAmmoGainOnEnd { get; set; } = 0f;
 
+        [JsonIgnore]
         public bool HasAnyAmmoGain => MainAmmoGainOnEnd > 0f || SpecialAmmoGainOnEnd > 0f || ToolAmmoGainOnEnd > 0f;
+        [JsonIgnore]
         public bool HasAnyGain => HealthGainOnEnd > 0f || HasAnyAmmoGain;
     }
 }

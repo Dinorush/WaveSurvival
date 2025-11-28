@@ -1,4 +1,6 @@
 ﻿using System.Text.Json.Serialization;
+using WaveSurvival.CustomWaveData.Wave;
+using WaveSurvival.Json;
 using WaveSurvival.Json.Converters;
 using WaveSurvival.Utils;
 
@@ -11,8 +13,11 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
         {
             new()
             {
-                Waves = new() { new() { ID = "Example" } },
-                EventData = new() { new() }
+                Waves = new(new List<WeightedWaveReference>()
+                {
+                    new(WaveData.Template.Values.First())
+                }),
+                Events = new() { new(new WaveEventData()) }
             },
             new()
             {
@@ -21,11 +26,35 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
                     new() { ID = "Example" },
                     new() { ID = "Example Two", Weight = 0.5f }
                 },
-                EventData = new() { new() }
+                Events = new() { new(new WaveEventData()) }
+            },
+            new()
+            {
+                Waves = new()
+                {
+                    new() { ID = "Example" },
+                    new() { ID = "Example Two" }
+                },
+                Events = new() { new("Example"), new("Example") }
             }
         };
 
-        public WeightedList<WeightedWaveData> Waves { get; set; } = WeightedList<WeightedWaveData>.Empty;
-        public List<WaveEventData> EventData { get; set; } = EmptyList<WaveEventData>.Instance;
+        public WeightedList<WeightedWaveReference> Waves { get; set; } = WeightedList<WeightedWaveReference>.Empty;
+        public List<JsonReference<WaveEventData>> Events { get; set; } = EmptyList<JsonReference<WaveEventData>>.Instance;
+
+        public bool ResolveReferences()
+        {
+            Waves.RemoveAll(data => !DataManager.Resolve(data));
+            foreach (var wave in Waves)
+                wave.Value!.ResolveReferences();
+
+            foreach (var eventData in Events)
+                if (!DataManager.Resolve(eventData))
+                    eventData.Value = new();
+            return true;
+        }
+
+        public WaveData GetWaveData() => Waves.GetRandom();
+        public void RefillWaves() => Waves.Refill();
     }
 }

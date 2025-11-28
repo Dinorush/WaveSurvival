@@ -82,6 +82,14 @@ namespace WaveSurvival.Utils
             }
         }
 
+        public int RemoveAll(Predicate<T> predicate)
+        {
+            int removed = _values.RemoveAll(predicate);
+            if (removed != 0)
+                _isDirty = true;
+            return removed;
+        }
+
         IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
         IEnumerator<T> IEnumerable<T>.GetEnumerator() => _values.GetEnumerator();
 
@@ -104,6 +112,12 @@ namespace WaveSurvival.Utils
             if (Heap[1].TotalWeight == 0)
                 RefillHeap();
             return PopFromHeap();
+        }
+
+        public void Refill()
+        {
+            if (Count != 0 && !_isDirty)
+                RefillHeap();
         }
 
         private void GenerateHeap()

@@ -28,13 +28,13 @@ namespace WaveSurvival.Json.Converters
                     case "wave":
                         if (reader.TokenType == JsonTokenType.StartArray)
                         {
-                            if (!JSON.TryDeserialize<WeightedList<WeightedWaveData>>(ref reader, out var waveList))
+                            if (!JSON.TryDeserialize<WeightedList<WeightedWaveReference>>(ref reader, out var waveList))
                                 throw new JsonException("Expected list of wave data when reading WaveGroup");
                             data.Waves = waveList;
                         }
                         else
                         {
-                            if (!JSON.TryDeserialize<WeightedWaveData>(ref reader, out var waveData))
+                            if (!JSON.TryDeserialize<WeightedWaveReference>(ref reader, out var waveData))
                                 throw new JsonException("Expected wave data when reading WaveGroup");
                             data.Waves = new() { waveData };
                         }
@@ -44,15 +44,15 @@ namespace WaveSurvival.Json.Converters
                     case "event":
                         if (reader.TokenType == JsonTokenType.StartArray)
                         {
-                            if (!JSON.TryDeserialize<List<WaveEventData>>(ref reader, out var eventList))
+                            if (!JSON.TryDeserialize<List<JsonReference<WaveEventData>>>(ref reader, out var eventList))
                                 throw new JsonException("Expected list of event data when reading WaveGroup");
-                            data.EventData = eventList;
+                            data.Events = eventList;
                         }
                         else
                         {
-                            if (!JSON.TryDeserialize<WaveEventData>(ref reader, out var eventData))
+                            if (!JSON.TryDeserialize<JsonReference<WaveEventData>>(ref reader, out var eventData))
                                 throw new JsonException("Expected wave data when reading WaveGroup");
-                            data.EventData = new() { eventData };
+                            data.Events = new() { eventData };
                         }
                         break;
                 }
@@ -70,27 +70,17 @@ namespace WaveSurvival.Json.Converters
             }
 
             writer.WriteStartObject();
-            writer.WritePropertyName(nameof(value.Waves));
+            writer.WritePropertyName("Wave");
             if (value.Waves.Count == 1)
-                writer.WriteStringValue(value.Waves[0].ID);
+                JsonSerializer.Serialize(writer, value.Waves[0], options);
             else
-            {
-                writer.WriteStartArray();
-                foreach (var wave in value.Waves)
-                {
-                    writer.WriteStartArray();
-                    writer.WriteStringValue(wave.ID);
-                    writer.WriteNumberValue(wave.Weight);
-                    writer.WriteEndArray();
-                }
-                writer.WriteEndArray();
-            }
+                JsonSerializer.Serialize(writer, value.Waves, options);
 
-            writer.WritePropertyName(nameof(value.EventData));
-            if (value.EventData.Count == 1)
-                JsonSerializer.Serialize(writer, value.EventData[0]);
+            writer.WritePropertyName("Event");
+            if (value.Events.Count == 1)
+                JsonSerializer.Serialize(writer, value.Events[0], options);
             else
-                JsonSerializer.Serialize(writer, value.EventData);
+                JsonSerializer.Serialize(writer, value.Events, options);
             writer.WriteEndObject();
         }
     }

@@ -1,47 +1,53 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using WaveSurvival.CustomWaveData.Wave;
 using WaveSurvival.CustomWaveData.WaveObjective;
 
 namespace WaveSurvival.Json.Converters
 {
-    public sealed class WeightedWaveConverter : JsonConverter<WeightedWaveData>
+    public sealed class WeightedWaveConverter : JsonConverter<WeightedWaveReference>
     {
-        public override WeightedWaveData? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override WeightedWaveReference? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            WeightedWaveData data = new();
+            using var doc = JsonDocument.ParseValue(ref reader);
+            var element = doc.RootElement;
 
-            if (reader.TokenType == JsonTokenType.String)
+            WeightedWaveReference d = new();
+
+            if (element.ValueKind == JsonValueKind.String || element.ValueKind == JsonValueKind.Object)
             {
-                data.ID = reader.GetString()!;
-                return data;
+                DeserializeReference(element, d, options);
+                return d;
             }
 
-            if (reader.TokenType != JsonTokenType.StartArray) throw new JsonException("Expected enemy data to be either a number or list");
+            if (element.ValueKind != JsonValueKind.Array)
+                throw new JsonException("Expected wave data or list of weighted waves");
 
-            reader.Read();
-            if (reader.TokenType == JsonTokenType.String)
-                data.ID = reader.GetString()!;
-            else
-                throw new JsonException("Expected ID as first element in weighted wave data");
+            var arr = element.EnumerateArray();
 
-            reader.Read();
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return data;
+            if (arr.MoveNext()) DeserializeReference(arr.Current, d, options);
+            if (arr.MoveNext()) d.Weight = arr.Current.GetSingle();
+            if (arr.MoveNext()) throw new JsonException("Expected weighted wave data to be 2 elements long");
 
-            if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected Weight as second element in weighted wave data");
-
-            data.Weight = reader.GetSingle();
-            reader.Read();
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return data;
-
-            if (reader.TokenType == JsonTokenType.EndArray)
-                return data;
-
-            throw new JsonException("Expected EndArray after parsing 2 values for weighted wave data");
+            return d;
         }
 
-        public override void Write(Utf8JsonWriter writer, WeightedWaveData? value, JsonSerializerOptions options)
+        private static void DeserializeReference(JsonElement element, WeightedWaveReference data, JsonSerializerOptions options)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Null:
+                    return;
+                case JsonValueKind.String:
+                    data.ID = element.Deserialize<string>(options)!;
+                    return;
+                default:
+                    data.Value = element.Deserialize< WaveData>(options);
+                    return;
+            };
+        }
+
+        public override void Write(Utf8JsonWriter writer, WeightedWaveReference? value, JsonSerializerOptions options)
         {
             if (value == null)
             {
@@ -49,14 +55,20 @@ namespace WaveSurvival.Json.Converters
                 return;
             }
 
+            if (value.Value != null)
+            {
+                JsonSerializer.Serialize(writer, value.Value, options);
+                return;
+            }
+
             if (value.Weight == 1f)
             {
-                writer.WriteStringValue(value.ID);
+                JsonSerializer.Serialize<JsonReference<WaveData>>(writer, value, options);
                 return;
             }
 
             writer.WriteStartArray();
-            writer.WriteStringValue(value.ID);
+            JsonSerializer.Serialize<JsonReference<WaveData>>(writer, value, options);
             writer.WriteNumberValue(value.Weight);
             writer.WriteEndArray();
         }
