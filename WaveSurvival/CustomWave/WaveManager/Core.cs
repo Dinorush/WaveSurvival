@@ -108,12 +108,14 @@ namespace WaveSurvival.CustomWave
 
             if (TryGetActiveObjective(out var objective))
             {
-                var level = objective.Level;
                 foreach (var data in dataList)
                 {
                     // Will fail if the start event/dimension changes, but there's no unique ID for objectives
-                    if (data.Level.IsMatch(level) && data.StartEvent == objective.StartEvent && data.DimensionIndex == objective.DimensionIndex)
+                    if (data.Level.IsMatch(objective.Level) && data.RundownID == objective.RundownID && data.StartEvent == objective.StartEvent && data.DimensionIndex == objective.DimensionIndex)
+                    {
                         ActiveObjective = data;
+                        break;
+                    }
                 }
             }
 

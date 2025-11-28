@@ -140,14 +140,15 @@ namespace WaveSurvival.CustomWave
         private void CheckpointStoreWaves()
         {
             _checkpointData.waves = new(_waves);
-            _checkpointData.currentWave = _currentWave;
+            _checkpointData.currentWave = _activeWaves.Count == 0 ? _currentWave + 1 : _currentWave;
         }
 
         private void CheckpointReloadWaves()
         {
             _waves.AddRange(_checkpointData.waves);
             _currentWave = _checkpointData.currentWave - 1;
-            _nextWaveTime = _currentWave >= 0 ? _waves[_currentWave].EventData.TimeToNextOnEnd : _checkpointData.objective.StartDelay;
+            var delay = _currentWave > 0 ? _waves[_currentWave - 1].EventData.TimeToNextOnEnd : _checkpointData.objective.StartDelay;
+            _nextWaveTime = delay > 0 ? Clock.Time + delay : 0;
             WaveNetwork.SetWave(_currentWave + 1, GetNetworkID(_currentWave + 1), _nextWaveTime, WaveState.Transition);
         }
     }

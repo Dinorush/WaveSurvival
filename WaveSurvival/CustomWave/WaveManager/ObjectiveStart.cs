@@ -14,6 +14,9 @@ namespace WaveSurvival.CustomWave
 
         private void LoadLevelObjectives()
         {
+            if (RundownManager.ActiveExpedition == null) return;
+            if (!RundownManager.TryGetIdFromLocalRundownKey(RundownManager.ActiveRundownKey, out var rundownID)) return;
+
             var expData = RundownManager.GetActiveExpeditionData();
             var layoutID = RundownManager.ActiveExpedition.LevelLayoutData;
 
@@ -22,6 +25,7 @@ namespace WaveSurvival.CustomWave
             _eventStopData.Clear();
             foreach (var data in DataManager.ObjectiveDatas)
             {
+                if (data.RundownID != 0 && data.RundownID != rundownID) continue;
                 if (!data.Level.IsMatch(layoutID, expData.tier, expData.expeditionIndex)) continue;
 
                 if (data.StartEvent != eWardenObjectiveEventType.None)

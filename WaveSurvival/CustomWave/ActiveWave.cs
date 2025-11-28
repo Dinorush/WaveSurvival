@@ -89,7 +89,7 @@ namespace WaveSurvival.CustomWave
             if (IsDone()) return false;
 
             var spawn = CurrentSpawn;
-            if (spawn.SubWaveMaxCount > 0 && spawn.SubWaveMaxCount < QueuedCount + EnemyCount)
+            if (spawn.SubWaveMaxCount > 0 && spawn.SubWaveMaxCount <= QueuedCount + EnemyCount)
                 return false;
             if (spawn.SubWaveDelay > Clock.Time - _lastSubWaveTime)
                 return false;
