@@ -4,9 +4,15 @@
     {
         private int _enemyCount = 0;
 
-        public void OnEnemySpawned()
+        public void AddWaveEnemyCount(int count)
         {
-            WaveNetwork.SetEnemyCount(++_enemyCount);
+            WaveNetwork.SetEnemyCount(_enemyCount += count);
+        }
+
+        public void OnEnemySpawned(bool hideFromCount)
+        {
+            if (hideFromCount)
+                WaveNetwork.SetEnemyCount(++_enemyCount);
         }
 
         public void OnEnemyDead()

@@ -12,7 +12,7 @@ namespace WaveSurvival.CustomWave
         public readonly ZoneNode ZoneNode;
         public readonly int ID;
         private readonly Placement[] _spawnPositions;
-        private readonly Queue<(uint id, float delay, ActiveWave wave)> _queuedSpawns = new();
+        private readonly Queue<(uint id, float delay, bool isHidden, ActiveWave wave)> _queuedSpawns = new();
         private int _useCount = 0;
         private int _validCount = 0;
         private int _spawnIndex;
@@ -50,19 +50,19 @@ namespace WaveSurvival.CustomWave
             if (_queuedSpawns.TryPeek(out var queuedSpawn) && time >= queuedSpawn.delay + s_lastSpawnTime)
             {
                 _queuedSpawns.Dequeue();
-                SpawnEnemy(queuedSpawn.id, queuedSpawn.wave);
+                SpawnEnemy(queuedSpawn.id, queuedSpawn.isHidden, queuedSpawn.wave);
                 s_lastSpawnTime = time;
             }
 
             return _queuedSpawns.Count == 0 && !Valid && !Used;
         }
 
-        public void AddSpawn(uint id, float spawnRate, ActiveWave wave)
+        public void AddSpawn(uint id, float spawnRate, bool hideFromCount, ActiveWave wave)
         {
-            _queuedSpawns.Enqueue((id, 1f / spawnRate, wave));
+            _queuedSpawns.Enqueue((id, 1f / spawnRate, hideFromCount, wave));
         }
 
-        private void SpawnEnemy(uint id, ActiveWave wave)
+        private void SpawnEnemy(uint id, bool hideFromCount, ActiveWave wave)
         {
             var placement = _spawnPositions[_spawnIndex++];
             if (_spawnIndex >= _spawnPositions.Length)
@@ -72,7 +72,7 @@ namespace WaveSurvival.CustomWave
             }
 
             var agent = EnemyAllocator.Current.SpawnEnemy(id, Node, Agents.AgentMode.Agressive, placement.position, placement.rotation);
-            wave.OnEnemySpawned();
+            wave.OnEnemySpawned(hideFromCount);
             agent.AddOnDeadOnce(wave.OnEnemyDead);
         }
     }

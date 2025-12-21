@@ -63,6 +63,15 @@ namespace WaveSurvival.Json.Converters
                         if (JSON.TryDeserialize<List<WardenObjectiveEventData>>(ref reader, out var events))
                             target.EventsOnSubWaveStart = events;
                         break;
+                    case "subwavescreamsize":
+                        target.SubWaveScreamSize = JsonSerializer.Deserialize<ScreamSize>(ref reader, options);
+                        break;
+                    case "subwavescreamtype":
+                        target.SubWaveScreamType = JsonSerializer.Deserialize<ScreamType>(ref reader, options);
+                        break;
+                    case "hidefromtotalcount":
+                        target.HideFromTotalCount = reader.GetBoolean();
+                        break;
                 }
             }
 
@@ -88,6 +97,9 @@ namespace WaveSurvival.Json.Converters
             writer.WriteNumber(nameof(value.SubWaveDelay), value.SubWaveDelay);
             writer.WriteNumber(nameof(value.RandomDirectionChance), value.RandomDirectionChance);
             JSON.Serialize(writer, nameof(value.EventsOnSubWaveStart), value.EventsOnSubWaveStart);
+            writer.WriteString(nameof(value.SubWaveScreamSize), value.SubWaveScreamSize.ToString());
+            writer.WriteString(nameof(value.SubWaveScreamType), value.SubWaveScreamType.ToString());
+            writer.WriteBoolean(nameof(value.HideFromTotalCount), value.HideFromTotalCount);
             writer.WriteEndObject();
         }
     }

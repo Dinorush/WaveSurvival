@@ -37,6 +37,7 @@ namespace WaveSurvival.CustomWaveData.Wave
         public List<WardenObjectiveEventData> EventsOnSubWaveStart { get; set; } = EmptyList<WardenObjectiveEventData>.Instance;
         public ScreamSize SubWaveScreamSize { get; set; } = ScreamSize.Small;
         public ScreamType SubWaveScreamType { get; set; } = ScreamType.None;
+        public bool HideFromTotalCount { get; set; } = false;
 
         public void ResolveReferences()
         {
