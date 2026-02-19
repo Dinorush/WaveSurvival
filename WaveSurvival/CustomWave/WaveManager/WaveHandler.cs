@@ -124,7 +124,7 @@ namespace WaveSurvival.CustomWave
             }
 
             _nextWaveTime = Clock.Time + ActiveObjective.StartDelay;
-            _currentWave = ActiveObjective.StartWave - 2; // Shift 1-indexed from user to 0-indexed, then minus 1 since StartNextWave advances it
+            _currentWave = ActiveObjective.StartWave - 2; // Shift from 1-indexed json to 0-indexed, then minus 1 again since StartNextWave advances it
             WaveNetwork.SetWave(_currentWave + 1, GetNetworkID(_currentWave + 1), _nextWaveTime, WaveState.Transition);
         }
 
