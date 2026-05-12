@@ -2,6 +2,7 @@
 using WaveSurvival.CustomWaveData.Wave;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using WaveSurvival.CustomWaveData.WaveObjective;
 
 namespace WaveSurvival.Json.Converters
 {
@@ -69,6 +70,15 @@ namespace WaveSurvival.Json.Converters
                     case "subwavescreamtype":
                         target.SubWaveScreamType = JsonSerializer.Deserialize<ScreamType>(ref reader, options);
                         break;
+                    case "spawnlocations":
+                        target.SpawnLocations = JsonSerializer.Deserialize<List<SpawnPathData>>(ref reader, options);
+                        break;
+                    case "spawndistance":
+                        if (reader.TokenType == JsonTokenType.Null)
+                            target.SpawnDistance = null;
+                        else
+                            target.SpawnDistance = reader.GetInt32();
+                        break;
                     case "hidefromtotalcount":
                         target.HideFromTotalCount = reader.GetBoolean();
                         break;
@@ -99,6 +109,14 @@ namespace WaveSurvival.Json.Converters
             JSON.Serialize(writer, nameof(value.EventsOnSubWaveStart), value.EventsOnSubWaveStart);
             writer.WriteString(nameof(value.SubWaveScreamSize), value.SubWaveScreamSize.ToString());
             writer.WriteString(nameof(value.SubWaveScreamType), value.SubWaveScreamType.ToString());
+            if (value.SpawnLocations != null)
+                JSON.Serialize(writer, nameof(value.SpawnLocations), value.SpawnLocations);
+            else
+                writer.WriteNull(nameof(value.SpawnLocations));
+            if (value.SpawnDistance != null)
+                writer.WriteNumber(nameof(value.SpawnDistance), value.SpawnDistance.Value);
+            else
+                writer.WriteNull(nameof(value.SpawnDistance));
             writer.WriteBoolean(nameof(value.HideFromTotalCount), value.HideFromTotalCount);
             writer.WriteEndObject();
         }

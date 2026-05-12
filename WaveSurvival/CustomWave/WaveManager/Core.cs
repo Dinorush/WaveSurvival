@@ -80,10 +80,10 @@ namespace WaveSurvival.CustomWave
 
         [InvokeOnCleanup]
         private static void OnCleanup() => Current.Cleanup();
-        private void Cleanup()
+        private void Cleanup(bool isCheckpoint = false)
         {
             CleanupWaves();
-            CleanupSpawners();
+            CleanupSpawners(isCheckpoint);
             CleanupEnemyCount();
 
             ActiveObjective = null;
@@ -132,21 +132,22 @@ namespace WaveSurvival.CustomWave
             _checkpointData.objective = objective;
             CheckpointStoreObjectives();
             CheckpointStoreWaves();
+            CheckpointStoreSpawners();
         }
 
         internal static void Internal_OnCheckpointReload() => Current.OnCheckpointReload();
         private void OnCheckpointReload()
         {
-            Current.Cleanup();
+            Current.Cleanup(isCheckpoint: true);
             if (!IsMaster || !_checkpointData.active) return;
 
             ActiveObjective = _checkpointData.objective;
             WaveNetwork.SendObjective(ActiveObjective);
             IsActive = true;
-            SetupSpawners();
 
             CheckpointReloadObjectives();
             CheckpointReloadWaves();
+            CheckpointReloadSpawners();
         }
 
         struct CheckpointData

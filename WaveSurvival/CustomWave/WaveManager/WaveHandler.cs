@@ -2,7 +2,6 @@
 using Il2CppInterop.Runtime.Attributes;
 using Player;
 using UnityEngine;
-using WaveSurvival.CustomWaveData;
 using WaveSurvival.CustomWaveData.Wave;
 using WaveSurvival.CustomWaveData.WaveObjective;
 

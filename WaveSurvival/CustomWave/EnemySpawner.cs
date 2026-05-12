@@ -9,18 +9,15 @@ namespace WaveSurvival.CustomWave
         private static float s_lastSpawnTime = 0f;
 
         public readonly AIG_CourseNode Node;
-        public readonly ZoneNode ZoneNode;
         public readonly int ID;
         private readonly Placement[] _spawnPositions;
         private readonly Queue<(uint id, float delay, bool isHidden, ActiveWave wave)> _queuedSpawns = new();
         private int _useCount = 0;
-        private int _validCount = 0;
         private int _spawnIndex;
 
         public EnemySpawner(AIG_CourseNode node)
         {
             Node = node;
-            ZoneNode = ZoneTree.GetZoneNode(node.m_zone);
             ID = node.NodeID;
             var cluster = node.m_nodeCluster;
             _spawnPositions = new Placement[cluster.m_scoredPlacements.Count];
@@ -28,13 +25,6 @@ namespace WaveSurvival.CustomWave
                 _spawnPositions[i] = new(cluster.m_scoredPlacements[i].item.Position, EnemyGroup.GetRandomRotation());
 
             WaveManager.Random.Shuffle(_spawnPositions);
-        }
-
-        // Tracks whether any spawn paths are using this spawner - removed from valid pool in WaveManager when invalid
-        public bool Valid
-        {
-            get => _validCount > 0;
-            set => _validCount += value ? 1 : -1;
         }
 
         // Tracks whether any active waves are using this spawner
@@ -54,7 +44,7 @@ namespace WaveSurvival.CustomWave
                 s_lastSpawnTime = time;
             }
 
-            return _queuedSpawns.Count == 0 && !Valid && !Used;
+            return _queuedSpawns.Count == 0 && !Used;
         }
 
         public void AddSpawn(uint id, float spawnRate, bool hideFromCount, ActiveWave wave)
@@ -74,6 +64,12 @@ namespace WaveSurvival.CustomWave
             var agent = EnemyAllocator.Current.SpawnEnemy(id, Node, Agents.AgentMode.Agressive, placement.position, placement.rotation);
             wave.OnEnemySpawned(hideFromCount);
             agent.AddOnDeadOnce(wave.OnEnemyDead);
+        }
+
+        public void OnCheckpointReload()
+        {
+            _queuedSpawns.Clear();
+            _useCount = 0;
         }
     }
 }

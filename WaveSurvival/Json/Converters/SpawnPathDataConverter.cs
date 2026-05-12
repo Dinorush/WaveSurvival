@@ -28,9 +28,9 @@ namespace WaveSurvival.Json.Converters
             if (reader.TokenType == JsonTokenType.EndArray)
                 return target;
 
-            if (reader.TokenType != JsonTokenType.Number) throw new JsonException("Expected area index when reading a SpawnPath object");
+            if (reader.TokenType != JsonTokenType.Number && reader.TokenType != JsonTokenType.Null) throw new JsonException("Expected area index when reading a SpawnPath object");
 
-            target.AreaIndex = reader.GetInt32();
+            target.AreaIndex = reader.TokenType != JsonTokenType.Null ? reader.GetInt32() : SpawnPathData.AreaBreak;
             reader.Read();
             if (reader.TokenType == JsonTokenType.EndArray)
                 return target;
@@ -51,13 +51,18 @@ namespace WaveSurvival.Json.Converters
                 return;
             }
 
-            if (value.AreaIndex == -1)
+            if (value.AreaIndex == SpawnPathData.LastArea)
                 writer.WriteNumberValue((int)value.ZoneIndex);
             else
             {
                 writer.WriteStartArray();
                 writer.WriteNumberValue((int)value.ZoneIndex);
-                writer.WriteNumberValue(value.AreaIndex);
+                if (value.AreaIndex == SpawnPathData.AreaBreak)
+                    writer.WriteNullValue();
+                else
+                    writer.WriteNumberValue(value.AreaIndex);
+                if (value.Layer != LG_LayerType.MainLayer)
+                    writer.WriteNumberValue((int) value.Layer);
                 writer.WriteEndArray();
             }
         }

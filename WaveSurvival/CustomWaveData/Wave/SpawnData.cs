@@ -3,6 +3,7 @@ using WaveSurvival.Json.Converters;
 using WaveSurvival.Utils;
 using System.Text.Json.Serialization;
 using WaveSurvival.Json;
+using WaveSurvival.CustomWaveData.WaveObjective;
 
 namespace WaveSurvival.CustomWaveData.Wave
 {
@@ -37,6 +38,12 @@ namespace WaveSurvival.CustomWaveData.Wave
         public List<WardenObjectiveEventData> EventsOnSubWaveStart { get; set; } = EmptyList<WardenObjectiveEventData>.Instance;
         public ScreamSize SubWaveScreamSize { get; set; } = ScreamSize.Small;
         public ScreamType SubWaveScreamType { get; set; } = ScreamType.None;
+        public List<SpawnPathData>? SpawnLocations
+        {
+            get => _spawnLocations;
+            set => _spawnLocations = value?.Count > 0 ? value : null;
+        }
+        public int? SpawnDistance { get; set; } = null;
         public bool HideFromTotalCount { get; set; } = false;
 
         public void ResolveReferences()
@@ -50,5 +57,7 @@ namespace WaveSurvival.CustomWaveData.Wave
                     return x.Cost < y.Cost ? -1 : 1;
                 });
         }
+
+        private List<SpawnPathData>? _spawnLocations = null;
     }
 }

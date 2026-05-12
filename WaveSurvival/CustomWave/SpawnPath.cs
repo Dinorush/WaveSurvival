@@ -1,74 +1,85 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using AIGraph;
+using AmorLib.Utils;
+using LevelGeneration;
 
 namespace WaveSurvival.CustomWave
 {
     public sealed class SpawnPath
     {
-        private readonly List<EnemySpawner> _path;
+        private readonly List<(AIG_CourseNode? node, LG_Zone zone)> _path;
         private int _pathIndex;
+        private int _checkpointIndex;
 
-        public SpawnPath(List<EnemySpawner> pathList)
+        public SpawnPath(List<(AIG_CourseNode? node, LG_Zone zone)> pathList)
         {
             _path = pathList;
             _pathIndex = -1;
         }
 
-        public bool TryUpdatePath(bool opened, out EnemySpawner? spawner, out EnemySpawner? oldSpawner)
+        public bool TryUpdatePath(out AIG_CourseNode? spawner, out AIG_CourseNode? oldSpawner)
         {
-            return opened ? TryAdvancePath(out spawner, out oldSpawner) : TryRevertPath(out spawner, out oldSpawner);
+            return _pathIndex == -1 || ZoneGraphUtil.IsZoneReachable(_path[_pathIndex].zone) ? TryAdvancePath(out spawner, out oldSpawner) : TryRevertPath(out spawner, out oldSpawner);
         }
 
-        public bool TryRevertPath(out EnemySpawner? spawner, [MaybeNullWhen(false)] out EnemySpawner oldSpawner)
+        public bool TryRevertPath(out AIG_CourseNode? node, out AIG_CourseNode? oldNode)
         {
-            if (_pathIndex == -1 || _path[_pathIndex].ZoneNode.IsReachable)
+            if (_pathIndex == -1 || ZoneGraphUtil.IsZoneReachable(_path[_pathIndex].zone))
             {
-                spawner = null;
-                oldSpawner = null;
+                node = null;
+                oldNode = null;
                 return false;
             }
 
             int newIndex = _pathIndex;
-            while (newIndex - 1 >= 0 && !_path[newIndex - 1].ZoneNode.IsReachable)
+            while (newIndex - 1 >= 0 && !ZoneGraphUtil.IsZoneReachable(_path[newIndex - 1].zone))
                 --newIndex;
 
-            oldSpawner = _path[_pathIndex];
-            oldSpawner.Valid = false;
-
+            oldNode = _path[_pathIndex].node;
             _pathIndex = newIndex;
             if (_pathIndex >= 0)
-            {
-                spawner = _path[newIndex];
-                spawner.Valid = true;
-            }
+                node = _path[newIndex].node;
             else
-                spawner = null;
+                node = null;
             return true;
         }
 
-        public bool TryAdvancePath([MaybeNullWhen(false)] out EnemySpawner spawner, out EnemySpawner? oldSpawner)
+        public bool TryAdvancePath(out AIG_CourseNode? node, out AIG_CourseNode? oldNode)
         {
             int newIndex = _pathIndex;
-            while (newIndex + 1 < _path.Count && _path[newIndex + 1].ZoneNode.IsReachable)
+            while (newIndex + 1 < _path.Count && ZoneGraphUtil.IsZoneReachable(_path[newIndex + 1].zone))
                 ++newIndex;
 
             if (newIndex == _pathIndex)
             {
-                oldSpawner = null;
-                spawner = null;
+                oldNode = null;
+                node = null;
                 return false;
             }
 
             if (_pathIndex >= 0)
-            {
-                oldSpawner = _path[_pathIndex];
-                oldSpawner.Valid = false;
-            }
+                oldNode = _path[_pathIndex].node;
             else
-                oldSpawner = null;
+                oldNode = null;
 
             _pathIndex = newIndex;
-            spawner = _path[newIndex];
-            spawner.Valid = true;
+            node = _path[newIndex].node;
+            return true;
+        }
+
+        public void StoreCheckpoint()
+        {
+            _checkpointIndex = _pathIndex;
+        }
+
+        public bool OnCheckpointReload(out AIG_CourseNode? node)
+        {
+            _pathIndex = _checkpointIndex;
+            if (_pathIndex < 0)
+            {
+                node = null;
+                return false;
+            }
+            node = _path[_pathIndex].node;
             return true;
         }
     }

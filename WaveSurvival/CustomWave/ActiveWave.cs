@@ -3,11 +3,31 @@ using WaveSurvival.Utils.Extensions;
 using System.Collections;
 using WaveSurvival.CustomWaveData.WaveObjective;
 using System.Diagnostics.CodeAnalysis;
+using AIGraph;
+using LevelGeneration;
 
 namespace WaveSurvival.CustomWave
 {
     public sealed class ActiveWave
     {
+        struct SpawnSettings
+        {
+            public List<(AIG_CourseNode node, LG_Zone zone)>? spawnLocations;
+            public int? spawnDistance;
+
+            public SpawnSettings(WaveEventData data)
+            {
+                spawnLocations = GetSpawnNodes(data.SpawnLocations);
+                spawnDistance = data.SpawnDistance ?? WaveManager.ActiveObjective!.SpawnDistance;
+            }
+
+            public SpawnSettings(SpawnSettings baseSettings, SpawnData spawnData)
+            {
+                spawnLocations = spawnData.SpawnLocations != null ? GetSpawnNodes(spawnData.SpawnLocations) : baseSettings.spawnLocations;
+                spawnDistance = spawnData.SpawnDistance ?? baseSettings.spawnDistance;
+            }
+        }
+
         public int EnemyCount { get; private set; }
         public int QueuedCount { get; private set; }
         public readonly WaveData Settings;
@@ -16,20 +36,26 @@ namespace WaveSurvival.CustomWave
         private readonly IEnumerator _update;
         private readonly Queue<SpawnSet> _spawnSetQueue;
         private SpawnSet? _currentSpawn;
+        private SpawnSettings _currentSpawnSettings;
+        private readonly SpawnSettings _baseSpawnSettings;
         private float _lastSubWaveTime;
         private float _nextIntervalTime;
         private int _intervalCount;
+        private AIG_CourseNode _spawnNode;
         private EnemySpawner _spawner;
 
         public ActiveWave(WaveData settings, WaveEventData eventData)
         {
             Settings = settings;
             EventData = eventData;
+            _baseSpawnSettings = new(EventData);
+
             _update = SpawnWave();
             _spawnSetQueue = new();
             SetupSpawns();
 
-            WaveManager.Current.SetRandomSpawner(ref _spawner);
+            _currentSpawnSettings = _baseSpawnSettings;
+            SetRandomSpawner();
             WaveNetwork.DoWaveScream(Settings.ScreamSize, Settings.ScreamType, _spawner.Node.Position);
         }
 
@@ -49,6 +75,34 @@ namespace WaveSurvival.CustomWave
                 _currentSpawn = null;
 
             WaveManager.Current.AddWaveEnemyCount(total);
+        }
+
+        [MemberNotNull(nameof(_spawnNode), nameof(_spawner))]
+        private void SetRandomSpawner()
+        {
+            if (_currentSpawnSettings.spawnLocations != null)
+                WaveManager.Current.SetRandomSpawnNode(ref _spawnNode, _currentSpawnSettings.spawnLocations);
+            else
+                WaveManager.Current.SetRandomSpawnNode(ref _spawnNode);
+
+            UpdateSpawner();
+        }
+
+        [MemberNotNull(nameof(_spawner))]
+        private void UpdateSpawner()
+        {
+            WaveManager.Current.SetRandomSpawner(_spawnNode, ref _spawner, _currentSpawnSettings.spawnDistance);
+        }
+
+        public static List<(AIG_CourseNode, LG_Zone)>? GetSpawnNodes(List<SpawnPathData>? paths)
+        {
+            if (paths == null || paths.Count == 0) return null;
+
+            List<(AIG_CourseNode, LG_Zone)> nodes = new(paths.Count);
+            foreach (var path in paths)
+                if (WaveManager.TryGetNode(path, out var node, out var zoneNode) && node != null)
+                    nodes.Add((node, zoneNode));
+            return nodes;
         }
 
         public bool UpdateCheckDone()
@@ -93,8 +147,10 @@ namespace WaveSurvival.CustomWave
                 _lastSubWaveTime = Clock.Time;
 
                 var data = _currentSpawn.Settings;
-                if (WaveManager.Random.NextSingle() < data.RandomDirectionChance)
-                    WaveManager.Current.SetRandomSpawner(ref _spawner);
+                if (ShouldForceRandomSpawner(data) || WaveManager.Random.NextSingle() < data.RandomDirectionChance)
+                    SetRandomSpawner();
+                else
+                    UpdateSpawner();
 
                 foreach (var we in data.EventsOnSubWaveStart)
                     WardenObjectiveManager.CheckAndExecuteEventsOnTrigger(we, GameData.eWardenObjectiveEventTrigger.None, true);
@@ -117,6 +173,22 @@ namespace WaveSurvival.CustomWave
             if (spawn.SubWaveDelay > Clock.Time - _lastSubWaveTime)
                 return false;
             return true;
+        }
+
+        private bool ShouldForceRandomSpawner(SpawnData spawnData)
+        {
+            var lastPath = _currentSpawnSettings.spawnLocations;
+            _currentSpawnSettings = new(_baseSpawnSettings, spawnData);
+            var newPath = _currentSpawnSettings.spawnLocations;
+
+            if (lastPath == newPath) return false;
+            if (lastPath == null || newPath == null) return true;
+            if (lastPath.Count != newPath.Count) return true;
+
+            for (int i = 0; i < newPath.Count; i++)
+                if (lastPath[i].node.NodeID != newPath[i].node.NodeID)
+                    return true;
+            return false;
         }
 
         [MemberNotNullWhen(false, nameof(_currentSpawn))]
@@ -143,12 +215,14 @@ namespace WaveSurvival.CustomWave
             QueuedCount++;
             _intervalCount += cost;
 
-            if (_intervalCount >= data.SpawnInterval)
+            if (data.SpawnInterval > 0 && _intervalCount >= data.SpawnInterval)
             {
                 _nextIntervalTime = Clock.Time + data.SpawnDelayOnInterval;
                 _intervalCount -= data.SpawnInterval;
                 if (WaveManager.Random.NextSingle() < data.RandomDirectionChanceOnInterval)
-                    WaveManager.Current.SetRandomSpawner(ref _spawner);
+                    SetRandomSpawner();
+                else
+                    UpdateSpawner();
             }
             return !_currentSpawn.IsDone;
         }

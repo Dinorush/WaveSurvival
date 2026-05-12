@@ -10,6 +10,7 @@ namespace WaveSurvival
 {
     [BepInPlugin(GUID, MODNAME, VERSION)]
     [BepInDependency(MTFOWrapper.PLUGIN_GUID, BepInDependency.DependencyFlags.HardDependency)]
+    [BepInDependency("Amor.AmorLib", BepInDependency.DependencyFlags.HardDependency)]
     [BepInDependency(PartialData.PLUGIN_GUID, BepInDependency.DependencyFlags.SoftDependency)]
     public sealed class EntryPoint : BasePlugin
     {
@@ -17,7 +18,7 @@ namespace WaveSurvival
             MODNAME = "WaveSurvival",
             AUTHOR = "Dinorush",
             GUID = AUTHOR + "." + MODNAME,
-            VERSION = "1.0.0";
+            VERSION = "1.1.0";
 
         private IEnumerable<MethodInfo> _cleanupCallbacks = null!;
         private IEnumerable<MethodInfo> _enterCallbacks = null!;

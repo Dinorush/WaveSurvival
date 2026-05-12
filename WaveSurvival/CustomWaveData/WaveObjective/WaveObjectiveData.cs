@@ -27,6 +27,7 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
         public eWardenObjectiveEventType StopEvent { get; set; } = eWardenObjectiveEventType.None;
         public LocaleText CompleteHeader { get; set; } = new("<u>All Waves Complete</u>");
         public List<List<SpawnPathData>> SpawnPaths { get; set; } = EmptyList<List<SpawnPathData>>.Instance;
+        public int? SpawnDistance { get; set; } = null;
         public List<WaveGroupData> WaveSequence { get; set; } = EmptyList<WaveGroupData>.Instance;
 
         public void ResolveReferences()

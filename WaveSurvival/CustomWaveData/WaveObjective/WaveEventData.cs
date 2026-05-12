@@ -1,5 +1,6 @@
 ﻿using GameData;
 using System.Text.Json.Serialization;
+using WaveSurvival.CustomWave;
 using WaveSurvival.Utils;
 
 namespace WaveSurvival.CustomWaveData.WaveObjective
@@ -15,6 +16,12 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
 
         public List<WardenObjectiveEventData> EventsOnWaveStart { get; set; } = EmptyList<WardenObjectiveEventData>.Instance;
         public List<WardenObjectiveEventData> EventsOnWaveEnd { get; set; } = EmptyList<WardenObjectiveEventData>.Instance;
+        public List<SpawnPathData>? SpawnLocations
+        {
+            get => _spawnLocations;
+            set => _spawnLocations = value?.Count > 0 ? value : null;
+        }
+        public int? SpawnDistance { get; set; } = null;
         public float TimeToNextOnStart { get; set; } = 0f;
         public float TimeToNextOnEnd { get; set; } = 60f;
         public bool EndOnAllWavesEnd { get; set; } = false;
@@ -27,5 +34,7 @@ namespace WaveSurvival.CustomWaveData.WaveObjective
         public bool HasAnyAmmoGain => MainAmmoGainOnEnd > 0f || SpecialAmmoGainOnEnd > 0f || ToolAmmoGainOnEnd > 0f;
         [JsonIgnore]
         public bool HasAnyGain => HealthGainOnEnd > 0f || HasAnyAmmoGain;
+
+        private List<SpawnPathData>? _spawnLocations = null;
     }
 }
