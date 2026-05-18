@@ -45,7 +45,16 @@ namespace WaveSurvival.CustomWave
         [HideFromIl2Cpp]
         public void SetRandomSpawnNode([NotNull] ref AIG_CourseNode? node)
         {
-            node = _pathNodes.Values.ToArray()[Random.Next(_pathNodes.Count)].Node;
+            if (_pathNodes.Count > 0)
+                node = _pathNodes.Values.ToArray()[Random.Next(_pathNodes.Count)].Node;
+            else
+            {
+                DinoLogger.Error($"No path nodes available! Defaulting to spawn!");
+                if (!Builder.CurrentFloor.GetDimension(ActiveObjective!.DimensionIndex, out var dimension))
+                    node = AIG_CourseNode.s_allNodes[0];
+                else
+                    node = dimension.MainLayer.m_zones[0].m_areas[0].m_courseNode;
+            }
         }
 
         [HideFromIl2Cpp]
@@ -56,7 +65,14 @@ namespace WaveSurvival.CustomWave
             foreach ((var option, var zone) in spawnLocations)
                 if (ZoneGraphUtil.IsZoneReachable(zone))
                     validNodes[validCount++] = option;
-            node = validNodes[Random.Next(validCount)];
+
+            if (validCount > 0)
+                node = validNodes[Random.Next(validCount)];
+            else
+            {
+                DinoLogger.Error($"No spawn locations reachable! Reverting to path...");
+                SetRandomSpawnNode(ref node);
+            }
         }
 
         [HideFromIl2Cpp]

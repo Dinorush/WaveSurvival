@@ -18,7 +18,7 @@ namespace WaveSurvival
             MODNAME = "WaveSurvival",
             AUTHOR = "Dinorush",
             GUID = AUTHOR + "." + MODNAME,
-            VERSION = "1.1.0";
+            VERSION = "1.1.1";
 
         private IEnumerable<MethodInfo> _cleanupCallbacks = null!;
         private IEnumerable<MethodInfo> _enterCallbacks = null!;

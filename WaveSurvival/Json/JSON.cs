@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WaveSurvival.CustomWaveData.WaveObjective;
+using WaveSurvival.Dependencies;
 using WaveSurvival.Json.Converters.Utils;
 
 namespace WaveSurvival.Json
@@ -21,6 +22,8 @@ namespace WaveSurvival.Json
         {
             _setting.Converters.Add(new JsonStringEnumConverter());
             _setting.Converters.Add(new OptionalListConverter<WaveObjectiveData>());
+            if (PartialData.HasPData)
+                _setting.Converters.Add(PartialData.PDataIDConverter);
         }
 
         public static T? Deserialize<T>(string json)
